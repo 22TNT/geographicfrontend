@@ -3,8 +3,8 @@ import {useParams} from "react-router-dom";
 import {ValidationErrors} from "final-form";
 import {Field, Form as FinalForm} from "react-final-form";
 
-import {MapContainer, TileLayer, useMap, Marker, Popup, Polygon, Polyline} from "react-leaflet";
-import L, {LatLngTuple} from "leaflet";
+import {MapContainer, TileLayer, useMap, Marker, Popup, Polygon, Polyline, Rectangle} from "react-leaflet";
+import L, {LatLng, LatLngBounds, LatLngBoundsExpression, LatLngTuple} from "leaflet";
 import "leaflet/dist/leaflet.css";
 import '../App.css';
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -31,46 +31,31 @@ type ExportableNode = {
     lat2: number,
     lng2: number,
     contamination: State[],
-}
-
-type Node = {
-    lat: number,
-    lng: number,
-    contaminations: State[],
 };
 
-type Frame = {
-    id: string,
-    windSpeed: number,
-    windDirection: number,
-    timeOfDay: number,
-    tick: number,
-    map: Node[][],
-};
-
-type ContaminationForm  = {
+type Sources = {
     lat: number,
     lng: number,
-    state: State,
-}
+    height: number,
+    material: Material,
+    power: number,
+    dispersionHorizontal: number,
+    dispersionVertical: number,
+};
 
 export default function Map() {
     const {simID} = useParams();
-    const [frame, setFrame] = useState<Frame>({
-        id: "1",
-        windSpeed: 0,
-        windDirection: 0,
-        timeOfDay: 0,
-        tick: 1,
-        map: [],
-    });
-    const [nodes, setNodes] = useState<Node[]>([]);
+
     const [mapread, setMapread] = useState<ExportableNode[]>([]);
+    const [sources, setSources] = useState<Sources[]>([])
     const [center, setCenter] = useState<LatLngTuple>([0, 0]);
-    const [borders, setBorders] = useState<LatLngTuple[]>([]);
+    const [borders, setBorders] = useState<LatLngBoundsExpression>(new LatLngBounds([0, 0], [0, 0]));
+
+    const [loaded, setLoaded] = useState<boolean>(false);
+    const [tick, setTick] = useState<number>(0);
 
     const nodesRequest = async () => {
-        const response = await fetch(`${url}/v2/${simID}/frame/1`, {
+        const response = await fetch(`${url}/v2/${simID}/frame/${tick}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -92,18 +77,24 @@ export default function Map() {
             (parseFloat(result.lat1) + parseFloat(result.lat2)) / 2,
             (parseFloat(result.lng1) + parseFloat(result.lng2)) / 2,
         ]);
-        setBorders([
-            [result.lat1, result.lng1],
-            [result.lat1, result.lng2],
-            [result.lat2, result.lng2],
-            [result.lat2, result.lng1],
-            [result.lat1, result.lng1],
-        ])
+        setBorders(new LatLngBounds([result.lat1, result.lng1], [result.lat2, result.lng2]));
+    };
+
+    const sourceRequest = async () => {
+        const response = await fetch(`${url}/${simID}/source`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        })
+        let result = await response.json();
+        setSources(result);
     };
 
 
     useEffect(() => {
-        infoRequest();
+        infoRequest().then(() => setLoaded(true));
+        sourceRequest();
         nodesRequest();
     }, []);
 
@@ -127,28 +118,42 @@ export default function Map() {
 
     return (
         <div>
-            <MapContainer center={center} zoom={3} scrollWheelZoom={true}>
+            {loaded && (<MapContainer center={center} zoom={10} scrollWheelZoom={true}>
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <Polyline pathOptions={{color: "black"}} positions={borders}/>
+                <Rectangle
+                    pathOptions={{color: "black"}}
+                    bounds={borders}
+                    fillOpacity={0}
+                />
                 {mapread.map((exportnode) => {
                     return (
-                        <Polygon
-                            opacity={getLevel(exportnode)/10}
+                        <Rectangle
+                            opacity={getLevel(exportnode)}
                             color={"red"}
-                            positions={[
+                            bounds={[
                                 [exportnode.lat1, exportnode.lng1],
-                                [exportnode.lat1, exportnode.lng2],
                                 [exportnode.lat2, exportnode.lng2],
-                                [exportnode.lat2, exportnode.lng1],
                             ]}
+                            weight={1}
                         />
+                    );
+                })}
+                {sources.map((source) => {
+                    return (
+                        <Marker
+                            position={[source.lat, source.lng]}
+                            icon={L.icon({iconUrl: icon})}>
+                            <Popup>
+                                {source.material.name}
+                            </Popup>
+                        </Marker>
                     )
-                })
-                }
-            </MapContainer>
+                })}
+            </MapContainer>)}
+
             <input type={"range"} value={100} min={0} max={100} style={{width: 980}}/>
         </div>)
 }
