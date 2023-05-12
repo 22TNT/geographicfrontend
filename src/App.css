@@ -1,3 +1,8 @@
+.leaflet-container {
+  height: 80vh;
+  width: 100vh;
+}
+
 .App {
   text-align: center;
 }
