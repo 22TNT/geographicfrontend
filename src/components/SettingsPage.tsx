@@ -52,7 +52,7 @@ export default function Settings() {
         const resp = await settingsRequest();
         console.log(resp);
         if (resp) {
-            navigate(`/map/${resp.id}`);
+            navigate(`/settings/${resp.id}`);
         }
     };
 

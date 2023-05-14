@@ -10,12 +10,14 @@ import {
 
 import Settings from "./components/SettingsPage";
 import Map from "./components/MapPage";
+import WindAndSources from "./components/WindAndSources";
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path={"/"} element={<Settings/>}/>
+        <Route path={"/settings/:simID"} element={<WindAndSources/>}/>
         <Route path={"/map/:simID"} element={<Map/>}/>
         <Route path={"*"} element={<Navigate to={"/"} replace/>}/>
       </Routes>

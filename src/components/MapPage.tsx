@@ -43,6 +43,11 @@ type Sources = {
     dispersionVertical: number,
 };
 
+type Wind = {
+    direction: number,
+    speed: number,
+}
+
 export default function Map() {
     const {simID} = useParams();
 
@@ -51,7 +56,9 @@ export default function Map() {
     const [center, setCenter] = useState<LatLngTuple>([0, 0]);
     const [borders, setBorders] = useState<LatLngBoundsExpression>(new LatLngBounds([0, 0], [0, 0]));
 
-    const [loaded, setLoaded] = useState<boolean>(false);
+    const [wind, setWind] = useState<Wind>({direction: 0, speed: 0});
+    const [loadedSources, setLoadedSources] = useState<boolean>(false);
+    const [loadedWind, setLoadedWind] = useState<boolean>(false);
     const [tick, setTick] = useState<number>(0);
 
     const nodesRequest = async () => {
@@ -91,9 +98,20 @@ export default function Map() {
         setSources(result);
     };
 
+    const windRequest = async () => {
+        const response = await fetch(`${url}/${simID}/wind/${tick}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        })
+        let result = await response.json();
+        setWind(result);
+    }
 
     useEffect(() => {
-        infoRequest().then(() => setLoaded(true));
+        infoRequest().then(() => setLoadedSources(true));
+        windRequest().then(() => setLoadedWind(true));
         sourceRequest();
         nodesRequest();
     }, []);
@@ -102,6 +120,7 @@ export default function Map() {
         const timerId = setInterval(
             async () => {
                 await nodesRequest();
+                await windRequest();
             },
             1000
         );
@@ -118,7 +137,7 @@ export default function Map() {
 
     return (
         <div>
-            {loaded && (<MapContainer center={center} zoom={10} scrollWheelZoom={true}>
+            {loadedSources && (<MapContainer center={center} zoom={10} scrollWheelZoom={true}>
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -153,7 +172,11 @@ export default function Map() {
                     )
                 })}
             </MapContainer>)}
-
+            <br/>
+            {
+                loadedWind && (<>Direction = {wind.direction} Speed = {wind.speed}</>)
+            }
+            <br/>
             <input type={"range"} value={100} min={0} max={100} style={{width: 980}}/>
         </div>)
 }
