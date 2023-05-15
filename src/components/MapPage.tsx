@@ -8,11 +8,10 @@ import L, {LatLng, LatLngBounds, LatLngBoundsExpression, LatLngTuple} from "leaf
 import "leaflet/dist/leaflet.css";
 import '../App.css';
 import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
 import {nanoid} from "nanoid";
 
 import {url} from "../queries";
+import exp from "constants";
 
 type Material = {
     id: string,
@@ -61,6 +60,8 @@ export default function Map() {
     const [loadedWind, setLoadedWind] = useState<boolean>(false);
     const [tick, setTick] = useState<number>(0);
 
+    const [paused, setPaused] = useState<boolean>(true);
+
     const nodesRequest = async () => {
         const response = await fetch(`${url}/v2/${simID}/frame/${tick}`, {
             method: "GET",
@@ -71,6 +72,18 @@ export default function Map() {
         let result = await response.json();
         setMapread(result);
     };
+
+    const framePost = async () => {
+        const response = await fetch(`${url}/${simID}/frame/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({frames: 1}),
+        })
+        let result = await response.text();
+    };
+
 
     const infoRequest = async () => {
         const response = await fetch(`${url}/${simID}/info`, {
@@ -113,25 +126,26 @@ export default function Map() {
         infoRequest().then(() => setLoadedSources(true));
         windRequest().then(() => setLoadedWind(true));
         sourceRequest();
-        nodesRequest();
     }, []);
 
     useEffect(() => {
         const timerId = setInterval(
             async () => {
-                await nodesRequest();
-                await windRequest();
+                if (!paused) {
+                    await framePost().then(() => nodesRequest().then(() => windRequest()).then(() => {
+                        setTick(tick=> tick+1);}))
+                }
             },
-            1000
+            2000
         );
         return () => clearInterval(timerId);
-    }, []);
+    }, [framePost, nodesRequest, paused, tick, windRequest]);
 
     function getLevel(node: ExportableNode): number {
         let level = 0;
         node.contamination.forEach((stuff) => {
             level += stuff.levelOfContamination;
-        })
+        });
         return level;
     }
 
@@ -156,7 +170,6 @@ export default function Map() {
                                 [exportnode.lat1, exportnode.lng1],
                                 [exportnode.lat2, exportnode.lng2],
                             ]}
-                            weight={1}
                         />
                     );
                 })}
@@ -178,5 +191,8 @@ export default function Map() {
             }
             <br/>
             <input type={"range"} value={100} min={0} max={100} style={{width: 980}}/>
+            <br/>
+            <>1 секунда = 1 минута   </>
+            <button onClick={() => setPaused(paused => !paused)}>{paused ? "Пуск" : "Пауза"}</button>
         </div>)
 }
