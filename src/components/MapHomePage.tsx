@@ -8,7 +8,7 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./App.css";
-import L, {LatLngTuple} from "leaflet";
+import L, {LatLngBounds, LatLngTuple} from "leaflet";
 import {Field, Form as FinalForm} from "react-final-form";
 import {ValidationErrors} from "final-form";
 import {useNavigate} from "react-router-dom";
@@ -25,6 +25,7 @@ type SimulationFormValues = {
 const SECONDS_PER_HOUR = 1;
 const App = () => {
     const center: LatLngTuple = [54.8463, 83.0884];
+    const [openID, setOpenID] = useState<string>("");
 
     const isValid = (values: SimulationFormValues): ValidationErrors => {
         const errors: ValidationErrors = {};
@@ -62,11 +63,29 @@ const App = () => {
             return res.json();
         };
         const resp = await settingsRequest();
-        console.log(resp);
         if (resp) {
             navigate(`/settings/${resp.id}`);
         }
     };
+
+    const openSim = async () => {
+        const infoRequest = async () => {
+            const response = await fetch(`${url}/${openID}/info`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            })
+            return response.ok;
+        };
+        const resp = await infoRequest();
+        if (resp) {
+            navigate(`/map/${openID}`);
+        }
+        else {
+            setOpenID("Нет такой симуляции");
+        }
+    }
 
     return (
         <div className="app">
@@ -145,11 +164,22 @@ const App = () => {
                         </FinalForm>
                     </div>
                     <div className={"existingSimulation"}>
-                        <form>
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                openSim();
+                            }
+                        }>
                             <label>ID:
-                                <input type={"text"} placeholder={"ABCDEF123456"}/></label>
+                                <input
+                                    type={"text"}
+                                    value={openID}
+                                    placeholder={"ABCDEF123456"}
+                                    onChange={(e) => setOpenID(e.target.value)}
+                                />
+                            </label>
                             <br/>
-                            <button>Открыть</button>
+                            <button type={"submit"}>Открыть</button>
                         </form>
                     </div>
 
