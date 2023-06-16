@@ -11,14 +11,17 @@ import {
 import Settings from "./components/SettingsPage";
 import Map from "./components/MapPage";
 import WindAndSources from "./components/WindAndSources";
+import MapHomePage from "./components/MapHomePage";
+import MapSourcesPage from "./components/MapSourcesPage";
+import MapSimuPage from "./components/MapSimuPage";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path={"/"} element={<Settings/>}/>
-        <Route path={"/settings/:simID"} element={<WindAndSources/>}/>
-        <Route path={"/map/:simID"} element={<Map/>}/>
+        <Route path={"/"} element={<MapHomePage/>}/>
+        <Route path={"/settings/:simID"} element={<MapSourcesPage/>}/>
+        <Route path={"/map/:simID"} element={<MapSimuPage/>}/>
         <Route path={"*"} element={<Navigate to={"/"} replace/>}/>
       </Routes>
     </Router>

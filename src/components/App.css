@@ -1,0 +1,75 @@
+body {
+  margin: 0;
+  padding: 0;
+}
+.app {
+  display: grid;
+  grid-template-rows: 100vh;
+  grid-template-columns: 75vw 25vw;
+}
+
+.appMap {
+  display: grid;
+  grid-template-rows: 90vh 10vh;
+  grid-template-columns: 100vw;
+}
+.leaflet-container {
+  width: 75vw;
+  height: 95vh;
+}
+.underMap {
+  background-color: #2B2727;
+  height: 5vh;
+  justify-items: center;
+  align-items: center;
+  display: flex;
+}
+
+.underMap * {
+  width: 75vw;
+  height: 5vh;
+}
+
+.ZoneForm {
+  position: relative;
+  display: grid;
+  width: 25vw;
+  height: 25vh;
+  justify-items: center;
+  margin: 0 auto;
+}
+
+.existingSimulation {
+  position: relative;
+  display: grid;
+  width: 25vw;
+  height: 25vh;
+  justify-items: center;
+  margin: 0 auto;
+}
+
+.Menu {
+  background-color: #2B2727;
+  color: white;
+  position: relative;
+  width: 25vw;
+  height: 100vh;
+  justify-items: center;
+  margin: 0 auto;
+  text-align: center;
+}
+
+img {
+  max-height: 70%;
+  max-width: 70%;
+  object-fit: contain;
+}
+
+.windInfo {
+  height: 30vh;
+}
+
+
+h1 {
+  font-size: 36px;
+}
